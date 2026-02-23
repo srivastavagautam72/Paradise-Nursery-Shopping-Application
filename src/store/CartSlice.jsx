@@ -10,13 +10,15 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addItemToCart: (state, action) => {
+
+    // ✅ Required Function 1
+    addItem: (state, action) => {
       const newItem = action.payload;
       const existingItem = state.items.find(item => item.id === newItem.id);
 
       if (existingItem) {
         existingItem.quantity += 1;
-        existingItem.totalPrice += existingItem.price;
+        existingItem.totalPrice = existingItem.quantity * existingItem.price;
       } else {
         state.items.push({
           ...newItem,
@@ -25,67 +27,59 @@ const cartSlice = createSlice({
         });
       }
 
-      // Recalculate totals
-      state.totalQuantity = state.items.reduce((total, item) => total + item.quantity, 0);
-      state.totalPrice = state.items.reduce((total, item) => total + item.totalPrice, 0);
+      state.totalQuantity += 1;
+      state.totalPrice = state.items.reduce(
+        (total, item) => total + item.totalPrice,
+        0
+      );
     },
 
-    removeItemFromCart: (state, action) => {
+    // ✅ Required Function 2
+    removeItem: (state, action) => {
       const itemId = action.payload;
+      const existingItem = state.items.find(item => item.id === itemId);
+
+      if (!existingItem) return;
+
+      state.totalQuantity -= existingItem.quantity;
       state.items = state.items.filter(item => item.id !== itemId);
 
-      // Recalculate totals
-      state.totalQuantity = state.items.reduce((total, item) => total + item.quantity, 0);
-      state.totalPrice = state.items.reduce((total, item) => total + item.totalPrice, 0);
+      state.totalPrice = state.items.reduce(
+        (total, item) => total + item.totalPrice,
+        0
+      );
     },
 
-    increaseQuantity: (state, action) => {
-      const itemId = action.payload;
-      const existingItem = state.items.find(item => item.id === itemId);
+    // ✅ Required Function 3
+    updateQuantity: (state, action) => {
+      const { id, amount } = action.payload;
+      const existingItem = state.items.find(item => item.id === id);
 
-      if (existingItem) {
-        existingItem.quantity += 1;
-        existingItem.totalPrice += existingItem.price;
+      if (!existingItem) return;
+
+      existingItem.quantity += amount;
+
+      if (existingItem.quantity <= 0) {
+        state.items = state.items.filter(item => item.id !== id);
+      } else {
+        existingItem.totalPrice =
+          existingItem.quantity * existingItem.price;
       }
 
-      // Recalculate totals
-      state.totalQuantity = state.items.reduce((total, item) => total + item.quantity, 0);
-      state.totalPrice = state.items.reduce((total, item) => total + item.totalPrice, 0);
-    },
+      state.totalQuantity = state.items.reduce(
+        (total, item) => total + item.quantity,
+        0
+      );
 
-    decreaseQuantity: (state, action) => {
-      const itemId = action.payload;
-      const existingItem = state.items.find(item => item.id === itemId);
-
-      if (existingItem) {
-        if (existingItem.quantity > 1) {
-          existingItem.quantity -= 1;
-          existingItem.totalPrice -= existingItem.price;
-        } else {
-          // Remove item if quantity becomes 0
-          state.items = state.items.filter(item => item.id !== itemId);
-        }
-      }
-
-      // Recalculate totals
-      state.totalQuantity = state.items.reduce((total, item) => total + item.quantity, 0);
-      state.totalPrice = state.items.reduce((total, item) => total + item.totalPrice, 0);
-    },
-
-    clearCart: (state) => {
-      state.items = [];
-      state.totalQuantity = 0;
-      state.totalPrice = 0;
+      state.totalPrice = state.items.reduce(
+        (total, item) => total + item.totalPrice,
+        0
+      );
     },
   },
 });
 
-export const { 
-  addItemToCart, 
-  removeItemFromCart, 
-  increaseQuantity, 
-  decreaseQuantity,
-  clearCart 
-} = cartSlice.actions;
+export const { addItem, removeItem, updateQuantity } =
+  cartSlice.actions;
 
 export default cartSlice.reducer;
